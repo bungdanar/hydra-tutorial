@@ -1,49 +1,52 @@
-from dataclasses import dataclass, field
+# from dataclasses import dataclass, field
 from typing import Any, List
 
 from omegaconf import MISSING, DictConfig, OmegaConf
 import hydra
 from hydra.core.config_store import ConfigStore
+from pydantic.dataclasses import dataclass
+from pydantic import validator, field_validator
 
 
 @dataclass
-class Experiment:
+class ExperimentSchema:
     model: str = MISSING
     nrof_epochs: int = 30
-    learning_rate: float = 5e-3
+    batch_size: int = 512
+
+    @field_validator('batch_size')
+    def batch_size_multiple_of_32(cls, batch_size: int) -> int:
+        if batch_size % 32 != 0:
+            raise ValueError('batch_size should be a multiple of 32')
+        return batch_size
 
 
 @dataclass
-class Resnet18Experiment(Experiment):
+class Resnet18ExperimentSchema(ExperimentSchema):
     model: str = 'resnet18'
-    batch_size: int = 256
 
 
 @dataclass
-class Resnet50Experiment(Experiment):
+class Resnet50ExperimentSchema(ExperimentSchema):
     model: str = 'resnet50'
-    lr_scheduler: str = 'MultiStepLR'
-
-
-DEFAULT = [
-    {'experiment': 'resnet50'},
-    '_self_'
-]
 
 
 @dataclass
-class MainConfig:
-    defaults: List[Any] = field(default_factory=lambda: DEFAULT)
+class ConfigSchema:
+    experiment: ExperimentSchema
 
 
 cs = ConfigStore.instance()
-cs.store(name='config', node=MainConfig)
-cs.store(group='experiment', name='resnet18', node=Resnet18Experiment)
-cs.store(group='experiment', name='resnet50', node=Resnet50Experiment)
+cs.store(name='config_schema', node=ConfigSchema)
+cs.store(group='experiment', name='resnet18_schema',
+         node=Resnet18ExperimentSchema)
+cs.store(group='experiment', name='resnet50_schema',
+         node=Resnet50ExperimentSchema)
 
 
-@hydra.main(version_base=None, config_path=None, config_name='config')
+@hydra.main(version_base=None, config_path='configs', config_name='config')
 def main(config: DictConfig) -> None:
+    OmegaConf.to_object(config)
     print(OmegaConf.to_yaml(config))
 
 

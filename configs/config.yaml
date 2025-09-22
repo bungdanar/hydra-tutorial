@@ -1,10 +1,4 @@
-# defaults:
-#   - experiment: experiment-with-resnet18
-#   - loss_function: arcface
-#   - _self_
-
-# experiment:
-#   optimizer: SGD
-
 defaults:
-  - task: mnist_classification
+  - config_schema
+  - experiment: resnet18
+  - _self_

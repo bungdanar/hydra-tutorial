@@ -1,4 +1,0 @@
-model: resnet18
-optimizer: adam
-learning_rate: 5e-3
-lr_scheduler: MultiStepLR
